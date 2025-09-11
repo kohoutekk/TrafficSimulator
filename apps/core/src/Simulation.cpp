@@ -9,15 +9,15 @@
 #include <vector>
 
 
-Intersection *Simulation::addIntersection() {
-    auto inter = std::unique_ptr<Intersection>(new Intersection());
+Intersection *Simulation::addIntersection(float x, float y) {
+    auto inter = std::unique_ptr<Intersection>(new Intersection(x, y));
     auto raw = inter.get();
     intersections.push_back(std::move(inter));
     return raw;
 }
 
-Lane *Simulation::addLane(Intersection *from, Intersection *to, float length) {
-    auto lane = std::unique_ptr<Lane>(new Lane(from, to, length));
+Lane *Simulation::addLane(const LaneDef &def, Intersection *from, Intersection *to) {
+    auto lane = std::unique_ptr<Lane>(new Lane(def, from, to));
     auto raw = lane.get();
     lanes.push_back(std::move(lane));
 
@@ -31,7 +31,7 @@ Vehicle *Simulation::addVehicle(const VehicleDef& def, Lane *lane) {
     auto vehicle = std::make_unique<Vehicle>(def, lane);
     auto raw = vehicle.get();
     vehicles.push_back(std::move(vehicle));
-    lane->m_vehicles.push_back(raw);
+    lane->addVehicle(raw);
 
     return raw;
 }
@@ -118,8 +118,6 @@ void Simulation::removeIntersection(Intersection *i)
 void Simulation::removeVehicle(Vehicle *v)
 {
     if (!v) return;
-
-    EntityUtils::removeRef(v, v->m_lane->m_vehicles);
 
     EntityUtils::destroy(v, vehicles);
 }

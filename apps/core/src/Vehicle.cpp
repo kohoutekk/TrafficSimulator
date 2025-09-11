@@ -2,11 +2,6 @@
 #include "core/Lane.hpp"
 #include "core/Intersection.hpp"
 
-Vehicle* Vehicle::changeLane(Lane *desiredlane) {
-    if (desiredlane->vehicles().at(0)->nextLane() == desiredlane) {
-
-    }
-}
 
 Vehicle* Vehicle::findNearestVehicleAhead(float position) const {
     Vehicle* nearest = nullptr;
@@ -24,7 +19,8 @@ Vehicle* Vehicle::findNearestVehicleAhead(float position) const {
 }
 
 void Vehicle::update(float dt) {
-    Vehicle* nearest = findNearestVehicleAhead(m_position);
+    Vehicle *nearest = findNearestVehicleAhead(m_position);
+
 
     if (nearest) {
         float gap = nearest->position() - m_position - nearest->length();
@@ -53,9 +49,7 @@ void Vehicle::setPosition(float position) {
         if (m_routeIterator != m_route.end()) {
             // move to next lane
             float leftover = m_position - m_lane->length();
-            m_lane->removeVehicle(this);
-            m_lane = *(m_routeIterator++);
-            m_lane->addVehicle(this);
+            changeLane(*(m_routeIterator++));
             position = leftover;
         } else {
             // end of path
@@ -67,6 +61,15 @@ void Vehicle::setPosition(float position) {
 
     m_position = position;
 }
+
+
+void Vehicle::changeLane(Lane *newLane) {
+    if (!newLane || newLane == m_lane) return;
+    m_lane->removeVehicle(this);
+    newLane->addVehicle(this);
+    m_lane = newLane;
+}
+
 
 void Vehicle::setRoute(std::vector<Lane*>&& route) {
     if (route.empty()) return;

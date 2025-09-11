@@ -10,34 +10,59 @@
 #include "core/Intersection.hpp"
 #include "core/Vehicle.hpp"
 
+
+QPointF unitVector(float angleDeg) {
+    float rad = angleDeg * M_PI / 180.0;
+    return QPointF(std::cos(rad), std::sin(rad));
+}
+
+
+void drawLane(QGraphicsScene& scene, const Lane* lane, int trackCount = 2) {
+    QLineF line(lane->from()->position.x, lane->from()->position.y, lane->to()->position.x, lane->to()->position.y);
+
+    QLineF normal = line.normalVector();
+    normal.setLength(1.0);
+    QPointF offsetVec = normal.p2() - normal.p1();
+
+    for(int i = 0; i < trackCount; ++i) {
+        float d = (i - (trackCount-1)/2.0f) * 5.0f;
+        QLineF parallelLine = line.translated(offsetVec * d);
+        scene.addLine(parallelLine, QPen(Qt::gray, 2));
+    }
+}
+
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
     // === Setup Simulation ===
     Simulation sim;
 
-    auto A = sim.addIntersection();
-    auto B = sim.addIntersection();
-    auto C = sim.addIntersection();
-    auto D = sim.addIntersection();
-    auto E = sim.addIntersection();
+    auto A = sim.addIntersection(0, 0);
+    auto B = sim.addIntersection(200, 0);
+    auto C = sim.addIntersection(200, 150);
+    auto D = sim.addIntersection(0, 150);
+    auto E = sim.addIntersection(100, 300);
 
     qDebug() << A << B << C << D;
 
-    auto AC = sim.addLane(A, C, 250.0f);
-    auto CA = sim.addLane(C, A, 250.0f);
-    auto AB = sim.addLane(A, B, 200.0f);
-    auto BA = sim.addLane(B, A, 200.0f);
-    auto BC = sim.addLane(B, C, 150.0f);
-    auto CB = sim.addLane(C, B, 150.0f);
-    auto CD = sim.addLane(C, D, 200.0f);
-    auto DC = sim.addLane(D, C, 200.0f);
-    auto DA = sim.addLane(D, A, 150.0f);
-    auto AD = sim.addLane(A, D, 150.0f);
-    auto CE = sim.addLane(C, E, 150.0f);
-    auto EC = sim.addLane(E, C, 150.0f);
-    auto ED = sim.addLane(E, D, 150.0f);
-    auto DE = sim.addLane(D, E, 150.0f);
+    LaneDef laneDiagonal{250};
+    LaneDef laneHorizontal{200};
+    LaneDef laneVertical{150};
+
+    auto AC = sim.addLane(laneDiagonal, A, C);
+    auto CA = sim.addLane(laneDiagonal, C, A);
+    auto AB = sim.addLane(laneHorizontal, A, B);
+    auto BA = sim.addLane(laneHorizontal, B, A);
+    auto BC = sim.addLane(laneVertical, B, C);
+    auto CB = sim.addLane(laneVertical, C, B);
+    auto CD = sim.addLane(laneHorizontal, C, D);
+    auto DC = sim.addLane(laneHorizontal, D, C);
+    auto DA = sim.addLane(laneVertical, D, A);
+    auto AD = sim.addLane(laneVertical, A, D);
+    auto CE = sim.addLane(laneDiagonal, C, E);
+    auto EC = sim.addLane(laneDiagonal, E, C);
+    auto ED = sim.addLane(laneDiagonal, E, D);
+    auto DE = sim.addLane(laneDiagonal, D, E);
 
     VehicleDef carDef{4.0f, 33.0f, 3.0f};
     Vehicle* car1 = sim.addVehicle(carDef, AC);
@@ -55,46 +80,18 @@ int main(int argc, char *argv[]) {
     // === Visualization ===
     QGraphicsScene scene;
 
-    // Fake coordinates for intersections
-    QMap<const Intersection*, QPointF> coords;
-    coords[A] = QPointF(0, 0);
-    coords[B] = QPointF(200, 0);
-    coords[C] = QPointF(200, 150);
-    coords[D] = QPointF(0, 150);
-    coords[E] = QPointF(100, 250);
 
-    // Draw intersections
-    for (auto [inter, pos] : coords.asKeyValueRange()) {
-        scene.addEllipse(pos.x() - 5, pos.y() - 5, 10, 10, QPen(Qt::black), QBrush(Qt::black));
-    }
-
-    // Draw lanes
-    auto drawLane = [&](const Lane* lane, int trackCount = 2) {
-        QPointF from = coords[lane->from()];
-        QPointF to   = coords[lane->to()];
-        QLineF line(from, to);
-
-        QLineF normal = line.normalVector();
-        normal.setLength(1.0);
-        QPointF offsetVec = normal.p2() - normal.p1();
-
-        for (int i = 0; i < trackCount; ++i) {
-            float d = (i - (trackCount-1)/2.0f) * 5; // center tracks around main line
-            QLineF parallelLine = line.translated(offsetVec * d);
-            scene.addLine(parallelLine, QPen(Qt::gray, 2));
-        }
-    };
-    for (auto& lane : {AB, BC, CD, DA, AC, DE, CE}) drawLane(lane, 2);
+    for (auto& lane : {AB, BC, CD, DA, AC, DE, CE}) drawLane(scene, lane, 2);
 
     // Vehicle item
-    QGraphicsEllipseItem* carItem = scene.addEllipse(-5, -5, 10, 10, QPen(Qt::red), QBrush(Qt::red));
-    QGraphicsEllipseItem* carItem2 = scene.addEllipse(-5, -5, 10, 10, QPen(Qt::blue), QBrush(Qt::blue));
-    QGraphicsEllipseItem* carItem3 = scene.addEllipse(-5, -5, 10, 10, QPen(Qt::yellow), QBrush(Qt::yellow));
+    QGraphicsEllipseItem* carItem = scene.addEllipse(-5, -5, 7, 7, QPen(Qt::red), QBrush(Qt::red));
+    QGraphicsEllipseItem* carItem2 = scene.addEllipse(-5, -5, 7, 7, QPen(Qt::blue), QBrush(Qt::blue));
+    QGraphicsEllipseItem* carItem3 = scene.addEllipse(-5, -5, 7, 7, QPen(Qt::yellow), QBrush(Qt::yellow));
 
     auto drawCar = [&](Vehicle *v, QGraphicsEllipseItem *item, float laneOffset = 0.0f) {
         auto* lane = v->currentLane();
-        QPointF from = coords[lane->from()];
-        QPointF to   = coords[lane->to()];
+        QPointF from(lane->from()->position.x, lane->from()->position.y);
+        QPointF to(lane->to()->position.x, lane->to()->position.y);
         float t = v->position() / lane->length();
         QPointF pos = from + (to - from) * t;
 
@@ -131,3 +128,5 @@ int main(int argc, char *argv[]) {
 
     return app.exec();
 }
+
+

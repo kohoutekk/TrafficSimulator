@@ -1,9 +1,13 @@
 #ifndef VEHICLE_HPP
 #define VEHICLE_HPP
 
+#include "Lane.hpp"
+
 #include <vector>
 
 class Lane;
+
+enum class TurnType { Straight, Left, Right, UTurn };
 
 struct VehicleDef {
     float length = 4.5f;        // m
@@ -32,7 +36,14 @@ public:
         m_maxDeceleration(def.maxDecel),
         m_maxSpeed(def.maxSpeed),
         m_obeyTrafficLights(def.obeyTrafficLights)
-    {}
+    {
+        m_lane->addVehicle(this);
+    }
+
+    virtual ~Vehicle() {
+        m_lane->removeVehicle(this);
+    }
+
 
     void update(float dt);
     void setSpeed(float speed) { m_speed = std::min(m_maxSpeed, speed); }
@@ -52,12 +63,17 @@ public:
     float position() const { return m_position; }
     float length() const { return m_length; }
 
+    // For sorting by position
+    bool operator<(const Vehicle &v) const {
+        return m_position < v.position();
+    }
+
 private:
+    void changeLane(Lane *lane);
+
     void setRoute(std::vector<Lane *>&& route);
 
     Vehicle* findNearestVehicleAhead(float position) const;
-
-    Vehicle *changeLane(Lane *desiredlane);
 
     Lane *m_lane;
     std::vector<Lane *> m_route;
