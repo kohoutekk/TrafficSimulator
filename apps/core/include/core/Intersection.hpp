@@ -11,19 +11,20 @@ struct Position {
 };
 
 class Intersection {
-    // Only Simulation can create and mutate
     friend class Simulation;
+    friend class Lane;
 
 public:
-    Position position;
-    const std::vector<Lane*>& incomingLanes() const { return m_incomingLanes; }
-    const std::vector<Lane*>& outgoingLanes() const { return m_outgoingLanes; }
-
-private:
     Intersection(float x, float y) : position(x, y) {}
 
-    std::vector<Lane *> m_incomingLanes;
-    std::vector<Lane *> m_outgoingLanes;
+    Position position;
+
+    const std::vector<Lane*>& incomingLanes() const { return _incomingLanes; }
+    const std::vector<Lane*>& outgoingLanes() const { return _outgoingLanes; }
+
+private:
+    std::vector<Lane *> _outgoingLanes;
+    std::vector<Lane *> _incomingLanes;
 };
 
 #endif // INTERSECTION_HPP

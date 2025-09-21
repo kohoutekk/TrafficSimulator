@@ -10,6 +10,8 @@
 
 class Simulation {
 public:
+    ~Simulation();
+
     Intersection *addIntersection(float x, float y);
 
     Lane *addLane(const LaneDef &def, Intersection *from, Intersection *to);
@@ -28,12 +30,10 @@ public:
 
     void navigate(Vehicle *vehicle, const Intersection *to);
 
-
-
-    std::vector<std::unique_ptr<TrafficLight>>  lights;
-    std::vector<std::unique_ptr<Vehicle>>       vehicles;
-    std::vector<std::unique_ptr<Lane>>          lanes;
-    std::vector<std::unique_ptr<Intersection>>  intersections;
+    std::vector<TrafficLight *>  lights;
+    std::vector<Vehicle *>       vehicles;
+    std::vector<Lane *>          lanes;
+    std::vector<Intersection *>  intersections;
 
     static std::vector<Lane *> computeRoute(const Intersection *start, const Intersection *end);
 };

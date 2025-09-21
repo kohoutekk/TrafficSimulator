@@ -21,35 +21,36 @@ class Lane {
 
 public:
     float length() const {
-        return sqrt(pow(m_to->position.x - m_from->position.x, 2) + pow((m_to->position.y - m_from->position.y), 2));
+        return sqrt(pow(_to->position.x - _from->position.x, 2) + pow((_to->position.y - _from->position.y), 2));
     }
 
-    Intersection* to() const { return m_to; }
-    Intersection* from() const { return m_from; }
-
-    //float toAngle() const { return m_toAngle; }
-    //float fromAngle() const { return m_fromAngle; }
+    Intersection* to() const { return _to; }
+    Intersection* from() const { return _from; }
 
     const std::vector<Vehicle*>& vehicles() const { return m_vehicles; }
     const std::vector<TrafficLight*>& lights() const { return m_lights; }
 
 private:
-    Lane(const LaneDef &def, Intersection *from, Intersection *to)
-        : m_from(from), m_to(to) {}
+    Lane(const LaneDef &def, Intersection *from, Intersection *to) : _from(from), _to(to) {
+        _from->_outgoingLanes.push_back(this);
+        _to->_incomingLanes.push_back(this);
+    }
+
+    ~Lane() {
+        std::erase(_from->_outgoingLanes, this);
+        std::erase(_to->_incomingLanes, this);
+    }
 
     void addVehicle(Vehicle *v) {
-        // TODO: Avoid duplicates
         m_vehicles.push_back(v);
-        std::sort(m_vehicles.begin(), m_vehicles.end());
     }
 
     void removeVehicle(Vehicle *v) {
-        std::erase_if(m_vehicles, [v](auto* vehicle) { return vehicle == v; });
+        std::erase(m_vehicles, v);
     }
 
-
-    Intersection* m_from;
-    Intersection* m_to;
+    Intersection* _from;
+    Intersection* _to;
     std::vector<Vehicle *> m_vehicles;
     std::vector<TrafficLight *> m_lights;
 };

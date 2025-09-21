@@ -5,9 +5,14 @@
 
 #include <vector>
 
-class Lane;
+using Route = std::vector<Lane *>;
 
-enum class TurnType { Straight, Left, Right, UTurn };
+enum class TurnType {
+    Straight,
+    Left,
+    Right,
+    UTurn
+};
 
 struct VehicleDef {
     float length = 4.5f;        // m
@@ -15,78 +20,45 @@ struct VehicleDef {
     float maxSpeed = 30.0f;     // m/s (~108 km/h)
     float maxAccel = 3.0f;      // m/s^2
     float maxDecel = 6.0f;      // m/s^2 (braking)
-    float speed = 0.0f;
-    float position = 0.0f;
-    float accel = 0.15f;
-    bool obeyTrafficLights = true;
+    float accel = 0.15f;        // m/s^2
 };
 
 class Vehicle {
     friend class Simulation;
 
 public:
-    explicit Vehicle(const VehicleDef& def, Lane *lane) :
-        m_lane(lane),
-        m_length(def.length),
-        m_width(def.width),
-        m_position(def.position),
-        m_speed(def.speed),
-        m_acceleration(def.accel),
-        m_maxAcceleration(def.maxAccel),
-        m_maxDeceleration(def.maxDecel),
-        m_maxSpeed(def.maxSpeed),
-        m_obeyTrafficLights(def.obeyTrafficLights)
-    {
-        m_lane->addVehicle(this);
-    }
-
-    virtual ~Vehicle() {
-        m_lane->removeVehicle(this);
-    }
-
-
     void update(float dt);
-    void setSpeed(float speed) { m_speed = std::min(m_maxSpeed, speed); }
+    void setSpeed(float speed)              { _speed = std::min(_properties.maxSpeed, speed); }
     void setPosition(float position);
-    //void setMaxAccel(float maxAccel);
-    //void setMaxDecel(float maxDecel);
-    //void setWidth(float width);
-    //void setLength(float length);
-    //void setAccel(float accel);
-    Lane* currentLane() const { return m_lane; };
+    const VehicleDef& properties() const    { return _properties; }
+    float position() const                  { return _position; }
+    float speed() const                     { return _speed; }
+    Lane* currentLane() const               { return _currentLane; }
     Lane* nextLane() const {
-        if (m_routeIterator == m_route.end() || (m_routeIterator + 1) == m_route.end()) {
-            return nullptr;
+        Lane* next = nullptr;
+        if (_routePosition != _route.end() && (_routePosition + 1) != _route.end()) {
+            next = *(_routePosition + 1);
         }
-        return *(m_routeIterator + 1);
-    }
-    float position() const { return m_position; }
-    float length() const { return m_length; }
-
-    // For sorting by position
-    bool operator<(const Vehicle &v) const {
-        return m_position < v.position();
+        return next;
     }
 
 private:
-    void changeLane(Lane *lane);
+    Vehicle(const VehicleDef& def, Lane *lane) : _properties(def), _currentLane(lane) {
+        _currentLane->addVehicle(this);
+    }
+    ~Vehicle() {
+        _currentLane->removeVehicle(this);
+    }
 
     void setRoute(std::vector<Lane *>&& route);
-
     Vehicle* findNearestVehicleAhead(float position) const;
 
-    Lane *m_lane;
-    std::vector<Lane *> m_route;
-    std::vector<Lane *>::iterator m_routeIterator;
-    bool m_obeyTrafficLights;
-    float m_maxAcceleration;
-    float m_maxDeceleration;
-    float m_maxSpeed;
-    float m_length;
-    float m_width;
-    float m_position;      // meters along lane
-    float m_speed;         // m/s
-    float m_acceleration;  // m/s^2
+    float _position = 0;    // meters along lane
+    float _speed = 0;       // m/s
+    VehicleDef _properties;
+    Route _route;
+    Route::iterator _routePosition;
+    Lane* _currentLane;
 };
 
 #endif // VEHICLE_HPP

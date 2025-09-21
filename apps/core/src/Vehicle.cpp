@@ -7,7 +7,7 @@ Vehicle* Vehicle::findNearestVehicleAhead(float position) const {
     Vehicle* nearest = nullptr;
     float minDistance = std::numeric_limits<float>::max();
 
-    for (auto* v : m_lane->vehicles()) {
+    for (auto* v : currentLane()->vehicles()) {
         if (v == this) continue;
         float distance = v->position() - position;
         if (distance > 0 && distance < minDistance) {
@@ -19,66 +19,58 @@ Vehicle* Vehicle::findNearestVehicleAhead(float position) const {
 }
 
 void Vehicle::update(float dt) {
-    Vehicle *nearest = findNearestVehicleAhead(m_position);
-
+    Vehicle *nearest = findNearestVehicleAhead(_position);
 
     if (nearest) {
-        float gap = nearest->position() - m_position - nearest->length();
-
-        float safeDistance = m_length + std::max(4.0f, m_speed * 2.5f);
+        float gap = nearest->position() - _position - nearest->properties().length;
+        float safeDistance = _properties.length + std::max(4.0f, _speed * 2.5f);
 
         if (gap < safeDistance) {
-            // Too close → slow down
-            setSpeed(std::max(0.0f, m_speed - m_acceleration * dt));
+            // Too close, slow down
+            setSpeed(std::max(0.0f, _speed - _properties.accel * dt));
         } else {
-            // Free road → accelerate to desired speed
-            setSpeed(m_speed + m_acceleration * dt);
+            // Free road, accelerate to desired speed
+            setSpeed(_speed + _properties.accel * dt);
         }
     } else {
-        // No vehicle ahead → drive normally
-        setSpeed(m_speed + m_acceleration * dt);
+        // No vehicle ahead, drive normally
+        setSpeed(_speed + _properties.accel * dt);
     }
 
     // Update position
-    setPosition(m_position + m_speed * dt);
+    setPosition(_position + _speed * dt);
 }
 
 void Vehicle::setPosition(float position) {
-    while (position >= m_lane->length()) {
+    while (position >= _currentLane->length()) {
 
-        if (m_routeIterator != m_route.end()) {
+        if (_routePosition != _route.end()) {
             // move to next lane
-            float leftover = m_position - m_lane->length();
-            changeLane(*(m_routeIterator++));
+            float leftover = position - _currentLane->length();
+            _currentLane->removeVehicle(this);
+            _currentLane = *(_routePosition++);
+            _currentLane->addVehicle(this);
             position = leftover;
         } else {
             // end of path
-            position = m_lane->length();
-            m_speed = 0;
+            position = _currentLane->length();
+            _speed = 0;
             break;
         }
     }
 
-    m_position = position;
-}
-
-
-void Vehicle::changeLane(Lane *newLane) {
-    if (!newLane || newLane == m_lane) return;
-    m_lane->removeVehicle(this);
-    newLane->addVehicle(this);
-    m_lane = newLane;
+    _position = position;
 }
 
 
 void Vehicle::setRoute(std::vector<Lane*>&& route) {
     if (route.empty()) return;
 
-    m_route = std::move(route);
+    _route = std::move(route);
 
     // If we are already located on a lane found in the route
-    // start the iteration from the lane that follows
+    // start the iterator from the lane that follows
     // otherwise start from the beginning
-    auto it = std::find(m_route.begin(), m_route.end(), m_lane);
-    m_routeIterator = it != m_route.end() ? std::next(it) : m_route.begin();
+    auto it = std::find(_route.begin(), _route.end(), _currentLane);
+    _routePosition = it != _route.end() ? std::next(it) : _route.begin();
 }

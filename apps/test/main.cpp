@@ -80,8 +80,7 @@ int main(int argc, char *argv[]) {
     // === Visualization ===
     QGraphicsScene scene;
 
-
-    for (auto& lane : {AB, BC, CD, DA, AC, DE, CE}) drawLane(scene, lane, 2);
+    for (auto& lane : sim.lanes) drawLane(scene, lane, 2);
 
     // Vehicle item
     QGraphicsEllipseItem* carItem = scene.addEllipse(-5, -5, 7, 7, QPen(Qt::red), QBrush(Qt::red));
@@ -120,7 +119,6 @@ int main(int argc, char *argv[]) {
         drawCar(car1, carItem, -5);
         drawCar(car2, carItem2, -5);
         drawCar(car3, carItem3, -5);
-        //drawCar(car4, carItem);
     });
     timer.start(100); // 100 ms
 

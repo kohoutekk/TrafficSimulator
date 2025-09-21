@@ -2,17 +2,12 @@ add_library(core STATIC
     include/core/TrafficLight.hpp
     include/core/Vehicle.hpp
     include/core/Simulation.hpp
-
     include/core/Road.hpp
     include/core/Lane.hpp
     include/core/Intersection.hpp
+
     src/Vehicle.cpp
-
-    src/routing/Route.hpp
-    src/routing/RouteKey.hpp
-
     src/Simulation.cpp
-    src/utils.hpp
 )
 
 target_include_directories(core

@@ -22,19 +22,19 @@ std::vector<Edge> bfs(Node* start, Node *end, GetEdges &&getEdges, GetToNode &&g
         if (current == end) break;
 
         for (Edge edge : getEdges(current)) {
-
             Node* next = getTo(edge);
             if (visited.count(next)) continue;
             visited.insert(next);
             prev[next] = {current, edge};   // store parent
             q.push(next);
         }
-
     }
 
-    // reconstruct path
+    // Reconstruct path
     std::vector<Edge> path;
+    path.reserve(prev.size());
     Node* current = end;
+
     while (current != start) {
         auto it = prev.find(current);
         if (it == prev.end()) return {};
